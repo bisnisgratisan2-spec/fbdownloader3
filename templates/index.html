@@ -1,0 +1,98 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FB Downloader</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
+        h1 { color: #1877f2; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px; }
+        button { width: 100%; padding: 12px; background-color: #1877f2; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #166fe5; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #result { margin-top: 20px; display: none; text-align: left; }
+        #result img { width: 100%; border-radius: 8px; margin-bottom: 10px; }
+        .error { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
+        .loader { display: none; margin: 10px auto; border: 4px solid #f3f3f3; border-top: 4px solid #1877f2; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>FB Downloader</h1>
+    <p>Masukkan link video Facebook di bawah:</p>
+    
+    <input type="text" id="urlInput" placeholder="https://www.facebook.com/watch/...">
+    <button id="btnProcess" onclick="fetchVideo()">Proses Video</button>
+    
+    <div class="loader" id="loader"></div>
+    <p class="error" id="errorMsg"></p>
+
+    <div id="result">
+        <hr>
+        <h4 id="vidTitle">Judul Video</h4>
+        <img id="vidThumb" src="" alt="Thumbnail">
+        <a id="downloadLink" href="#" target="_blank" style="text-decoration: none;">
+            <button style="background-color: #42b72a;">Download MP4</button>
+        </a>
+    </div>
+</div>
+
+<script>
+    async function fetchVideo() {
+        const url = document.getElementById('urlInput').value;
+        const btn = document.getElementById('btnProcess');
+        const loader = document.getElementById('loader');
+        const resultDiv = document.getElementById('result');
+        const errorMsg = document.getElementById('errorMsg');
+
+        // Reset tampilan
+        resultDiv.style.display = 'none';
+        errorMsg.style.display = 'none';
+        
+        if (!url) {
+            errorMsg.innerText = "Mohon masukkan URL!";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        // Loading state
+        btn.disabled = true;
+        btn.innerText = "Sedang Memproses...";
+        loader.style.display = 'block';
+
+        try {
+            const response = await fetch('/api/download', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ url: url })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('vidTitle').innerText = data.title;
+                document.getElementById('vidThumb').src = data.thumbnail;
+                document.getElementById('downloadLink').href = data.url;
+                resultDiv.style.display = 'block';
+            } else {
+                errorMsg.innerText = "Gagal: " + (data.error || "Video tidak ditemukan/privat");
+                errorMsg.style.display = 'block';
+            }
+        } catch (err) {
+            errorMsg.innerText = "Terjadi kesalahan koneksi server.";
+            errorMsg.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Proses Video";
+            loader.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
